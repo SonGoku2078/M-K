@@ -229,7 +229,7 @@ if ($ParPriceVariant -eq "pct") {
 }
 if ($ParPriceVariant -eq "inc") {
     $tableCalc += [PSCustomObject]@{Calculation = "# OraclePriceIncreaseAbs= $ParOraclePriceIncreaseAbs"}
-    $tableCalc += [PSCustomObject]@{Calculation = "# OraclePriceLimit    = $ParOraclePriceLimit"}
+    $tableCalc += [PSCustomObject]@{Calculation = "# OraclePriceLimit      = $ParOraclePriceLimit"}
 }
 
 
