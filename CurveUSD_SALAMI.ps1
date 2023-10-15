@@ -348,4 +348,3 @@ $tableRows | Format-Table -Property $header -AutoSize | Out-String -Width 1000
 # Display the table with headers and lines between columns and remove single quotes
 $tableRows | Export-Csv -Path "$($ParPriceVariant)_output.csv" -Delimiter ";" -NoTypeInformation
 (Get-Content "$($ParPriceVariant)_output.csv") | ForEach-Object { $_ -replace '"', '' -replace '\?', '' } | Set-Content "$($OutputFilePath)\Output_$($ParPriceVariant).csv"
-
