@@ -22,7 +22,6 @@ $OraclePriceTable   = @()
 #-------------------------------------------------------
 
 # print: variables & calculation
-$Global:tableCalc=@()
 $tableCalc += [PSCustomObject]@{Calculation = "#--------------------------------------------------------------------------------------------------"}
 $tableCalc += [PSCustomObject]@{Calculation = "# Calculations / Formulas"}
 $tableCalc += [PSCustomObject]@{Calculation = "#--------------------------------------------------------------------------------------------------"}
