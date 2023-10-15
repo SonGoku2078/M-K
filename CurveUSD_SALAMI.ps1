@@ -20,7 +20,7 @@ $OraclePriceTable   = @()
 #-------------------------------------------------------
 # Statistics & prints
 #-------------------------------------------------------
-
+$Global:tableCalc=@()
 # print: variables & calculation
 $tableCalc += [PSCustomObject]@{Calculation = "#--------------------------------------------------------------------------------------------------"}
 $tableCalc += [PSCustomObject]@{Calculation = "# Calculations / Formulas"}
@@ -176,14 +176,14 @@ function SetFuturePriceSimulation {
 #-----------------------------------------------------------
 
 $OutputFilePath             = "C:\Users\SonGoku78\Downloads\"
-
+$Suffix                     = "1000"     # Last part of the csv Filename
 $StartCollateralETH         = 5
 $Bänder                     = 4
 $VaultSafetyUSD             = 10       # 10% Sicherheit 
 $SaftyPriceDistancePct      = 0.8      # min gap to oracle price eg. if a gap 25% then enter 0.75
 $StartPrice                 = 1550.43
 
-$ParPriceVariant            = "fix" #fix | pct | inc
+$ParPriceVariant            = "inc" #fix | pct | inc
 
 
 #"fix"
@@ -194,7 +194,7 @@ $ParOraclePriceIncreasePct  = 50
 $ParOraclePriceLimit        = 10000
 
 #"inc"
-$ParOraclePriceIncreaseAbs  = 500
+$ParOraclePriceIncreaseAbs  = 1000
 $ParOraclePriceLimit        = 10000
 
 $OraclePriceTable           = SetFuturePriceSimulation -ParPriceVariant $ParPriceVariant -ParStartPrice $StartPrice -ParOraclePriceLimit $ParOraclePriceLimit -ParOraclePriceIncreaseAbs $ParOraclePriceIncreaseAbs -ParOraclePriceIncreasePct $ParOraclePriceIncreasePct -ParFuturePricesInit $FuturePricesInit
@@ -346,4 +346,4 @@ $tableRows | Format-Table -Property $header -AutoSize | Out-String -Width 1000
 
 # Display the table with headers and lines between columns and remove single quotes
 $tableRows | Export-Csv -Path "$($ParPriceVariant)_output.csv" -Delimiter ";" -NoTypeInformation
-(Get-Content "$($ParPriceVariant)_output.csv") | ForEach-Object { $_ -replace '"', '' -replace '\?', '' } | Set-Content "$($OutputFilePath)\Output_$($ParPriceVariant).csv"
+(Get-Content "$($ParPriceVariant)_output.csv") | ForEach-Object { $_ -replace '"', '' -replace '\?', '' } | Set-Content "$($OutputFilePath)\Output_$($ParPriceVariant)_$($Suffix).csv"
