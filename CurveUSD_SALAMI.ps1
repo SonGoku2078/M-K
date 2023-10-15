@@ -47,7 +47,7 @@ $tableCalc += [PSCustomObject]@{Calculation = ""}
 
 
 # Create a custom table header
-$header = "Loop",` 
+$header = "TotLoop","LoopNormInter",` 
 "OldcollateralETH","OraclePrice","OldCollateralUSD",`
 "NewCreditUSD","NewKeet10pctUSD", "NewCollateralETH",`
 "TotCollateralETH","TotCollateralUSD", "TotCreditUSD",`
@@ -176,11 +176,11 @@ function SetFuturePriceSimulation {
 #-----------------------------------------------------------
 
 $OutputFilePath             = "C:\Users\SonGoku78\Downloads\"
-$Suffix                     = "1000"     # Last part of the csv Filename
+$Suffix                     = "500_no_SaftyRatio"     # Last part of the csv Filename
 $StartCollateralETH         = 5
 $Bänder                     = 4
 $VaultSafetyUSD             = 10       # 10% Sicherheit 
-$SaftyPriceDistancePct      = 0.8      # min gap to oracle price eg. if a gap 25% then enter 0.75
+$SaftyPriceDistancePct      = 1      # min gap to oracle price eg. if a gap 25% then enter 0.75
 $StartPrice                 = 1550.43
 
 $ParPriceVariant            = "inc" #fix | pct | inc
@@ -194,7 +194,7 @@ $ParOraclePriceIncreasePct  = 50
 $ParOraclePriceLimit        = 10000
 
 #"inc"
-$ParOraclePriceIncreaseAbs  = 1000
+$ParOraclePriceIncreaseAbs  = 500
 $ParOraclePriceLimit        = 10000
 
 $OraclePriceTable           = SetFuturePriceSimulation -ParPriceVariant $ParPriceVariant -ParStartPrice $StartPrice -ParOraclePriceLimit $ParOraclePriceLimit -ParOraclePriceIncreaseAbs $ParOraclePriceIncreaseAbs -ParOraclePriceIncreasePct $ParOraclePriceIncreasePct -ParFuturePricesInit $FuturePricesInit
@@ -243,9 +243,7 @@ $TotCollateralETH   = $StartCollateralETH
 #-----------------------------------------------------------
 $i1=0
 $ii1=0
-# $tableCalc += [PSCustomObject]@{Calculation = "# Break-Even       = (($StartCollateralETH * $OraclePriceTable[0]) + (($StartCollateralETH * $OraclePriceTable[0])  * $MaxUsdMinting)) / $StartCollateralETH "}
-
-
+$i9=0 
 # Loop 1 : Price Changes
 for ($i1 = 0; $i1 -lt $i2; $i1++) {       
     
@@ -268,7 +266,8 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
     $StartSoftLiquidUSD = $EndLiquidPriceUSD    / $LiquidationRatio
     
     $tableRows += [PSCustomObject]@{
-        Loop                = "{0,04:N0}"  -f (($i1 *10+10))
+        TotLoop             = $i9++
+        LoopNormInter       =  (($i1 *100+100))
         TotCollateralETH    = "{0,16:N2}" -f $TotCollateralETH
         OldcollateralETH    = "{0,16:N2}" -f $OldcollateralETH
         OldCollateralUSD    = "{0,16:N0}" -f $OldCollateralUSD
@@ -315,7 +314,8 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
             
             # Add the current values as a row in the table
             $tableRows += [PSCustomObject]@{
-                Loop                = "{0,04:N0}" -f ($ii1)
+                TotLoop             = $i9++
+                LoopNormInter       = "{0,05:N0}" -f ($ii1)
                 TotCollateralETH    = "{0,16:N2}" -f $TotCollateralETH
                 OldcollateralETH    = "{0,16:N2}" -f $OldcollateralETH
                 OldCollateralUSD    = "{0,16:N0}" -f $OldCollateralUSD
