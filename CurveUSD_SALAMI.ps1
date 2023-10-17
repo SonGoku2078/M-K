@@ -180,7 +180,8 @@ $Suffix                     = "500_no_SaftyRatio"     # Last part of the csv Fil
 $StartCollateralETH         = 5
 $Bänder                     = 4
 $VaultSafetyUSD             = 10       # 10% Sicherheit 
-$SaftyPriceDistancePct      = 1        # min gap to oracle price eg. if a gap 25% then enter 0.75
+$SaftyPriceDistancePct      = 25       # % gap to oracle price eg. if a gap 25% 
+$SaftyPriceDistanceDecimal  = (100 - $SaftyPriceDistancePct) / 100
 $StartPrice                 = 1804.98
 
 $ParPriceVariant            = "fix" #fix | pct | inc
@@ -195,7 +196,7 @@ $ParOraclePriceLimit        = 10000
 
 #"inc"
 $ParOraclePriceIncreaseAbs  = 500
-$ParOraclePriceLimit        = 1804.98
+$ParOraclePriceLimit        = 10000
 
 $OraclePriceTable           = SetFuturePriceSimulation -ParPriceVariant $ParPriceVariant -ParStartPrice $StartPrice -ParOraclePriceLimit $ParOraclePriceLimit -ParOraclePriceIncreaseAbs $ParOraclePriceIncreaseAbs -ParOraclePriceIncreasePct $ParOraclePriceIncreasePct -ParFuturePricesInit $FuturePricesInit
 
@@ -219,7 +220,6 @@ $tableCalc += [PSCustomObject]@{Calculation = ""}
 $tableCalc += [PSCustomObject]@{Calculation = "# ParPriceVariant        = $ParPriceVariant"}
 $tableCalc += [PSCustomObject]@{Calculation = "# OraclePrices           = $OraclePriceTable"}
 $tableCalc += [PSCustomObject]@{Calculation = "# VaultSafetyUSD         = $VaultSafetyUSD %"}
-$temp = 100 - ($SaftyPriceDistancePct *100 ) 
 $tableCalc += [PSCustomObject]@{Calculation = "# SaftyPriceDistancePct  = $temp %"}
 $tableCalc += [PSCustomObject]@{Calculation = ""}
 
@@ -288,31 +288,16 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
     }
     # $NewCollateralETH=0
     
-    $temp = ($TotCollateralETH * ($OraclePriceTable[$i1] * $SaftyPriceDistancePct)) * $MaxUsdMinting
-    Write-Host "##### TotCollateralETH      = $TotCollateralETH"
-    Write-Host "##### OraclePriceTable      = $OraclePriceTable[$i1]"
-    Write-Host "##### SaftyPriceDistancePct = $SaftyPriceDistancePct"
-    Write-Host "##### MaxUsdMinting         = $MaxUsdMinting"
-    Write-Host "##### TotCreditUSD          = $TotCreditUSD"
-    Write-Host "##### temp                  = $temp"
-     
+         
     # Loop 2 "Interloop" :  Loop until CollateralUSD is greater than TotCreditUSD
     # $ii1=0
-    while ( $TotCreditUSD -lt (($TotCollateralETH * ($OraclePriceTable[$i1] * $SaftyPriceDistancePct)) * $MaxUsdMinting)) {
+    while ( $TotCreditUSD -lt (($TotCollateralETH * ($OraclePriceTable[$i1] * $SaftyPriceDistanceDecimal)) * $MaxUsdMinting)) {
             $ii1++ 
             $OldcollateralETH   = $TotCollateralETH
             $OldCollateralUSD   = $OldcollateralETH *   $OraclePriceTable[$i1]       
             $TotCollateralUSD   = $TotCollateralETH *   $OraclePriceTable[$i1] 
             #$NewCreditUSD       = ($TotCollateralUSD -   $TotCreditUSD) #* $MaxUsdMinting
-            $NewCreditUSD       = ($TotCollateralUSD * $MaxUsdMinting) -   $TotCreditUSD    # AHA   
-            
-            Write-Host "##### TotCollateralETH      = $TotCollateralETH"
-    Write-Host "##### OraclePriceTable      = $OraclePriceTable[$i1]"
-    Write-Host "##### SaftyPriceDistancePct = $SaftyPriceDistancePct"
-    Write-Host "##### MaxUsdMinting         = $MaxUsdMinting"
-    Write-Host "##### TotCreditUSD          = $TotCreditUSD"
-    Write-Host "##### temp                  = $temp"
-             
+            $NewCreditUSD       = ($TotCollateralUSD * $MaxUsdMinting) -   $TotCreditUSD    # AHA                        
             $NewKeet10pctUSD    = $NewCreditUSD     *   ($VaultSafetyUSD/100)     # 10% Sicherheit
             $TotKeet10pctUSD    = $TotKeet10pctUSD  +   $NewKeet10pctUSD  
             $NewCollateralETH   = ($NewCreditUSD    -   $NewKeet10pctUSD) / $OraclePriceTable[$i1]
