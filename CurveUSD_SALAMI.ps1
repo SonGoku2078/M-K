@@ -1,21 +1,31 @@
-﻿
-# ------------------------------------------
-# Preparation
-# ------------------------------------------
-$OldcollateralETH   = 0
-$OldCollateralUSD   = 0
-$TotCollateralUSD   = 0
-$NewCreditUSD       = 0
-$NewKeet10pctUSD    = 0
-$TotKeet10pctUSD    = 0
-$NewCollateralETH   = 0
-$TotCreditUSD       = 0
-$TotCollateralETH   = 0
-$TotCollateralUSD   = 0
-$Leverage           = 0
-$CollLoanRatio      = 0
-$LoanColl           = 0
-$OraclePriceTable   = @()
+﻿#-----------------------------------------------------------
+# Settings
+#-----------------------------------------------------------
+
+$OutputFilePath                 = "C:\Users\SonGoku78\Downloads\"
+$Suffix                         = "500_no_SaftyRatio"     # Last part of the csv Filename
+$StartCollateralETH             = 5
+$ParBänder                      = 4
+$ParVaultSafetyUSD              = 10.0       # 10% Sicherheit 
+$ParSaftyPriceDistancePct       = 0.0       # % gap to oracle price eg. if a gap 25% 
+$ParSaftyPriceDistanceDecimal   = (100 - $ParSaftyPriceDistancePct) / 100
+$StartPrice                     = 1804.98
+$ParleverageEfficiency          = 5.0      # % change of previous (Old)CollateralETH based on leverage (TotCollateral)
+
+$ParPriceVariant                = "inc" #fix | pct | inc
+
+
+#"fix"
+$ParFuturePricesInit            = @($StartPrice)#, 1804.98)#,2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000)        
+
+#"pct" $StartPrice will be taken and the number of % 
+$ParOraclePriceIncreasePct      = 50
+$ParOraclePriceLimit            = 10000
+
+#"inc"
+$ParOraclePriceIncreaseAbs      = 500
+$ParOraclePriceLimit            = 1000
+
 
 #-------------------------------------------------------
 # Statistics & prints
@@ -48,24 +58,23 @@ $tableCalc += [PSCustomObject]@{Calculation = ""}
 
 
 # Create a custom table header
-$header = "TotLoop","LoopNormInter",` 
-"OldcollateralETH","OraclePrice","OldCollateralUSD",`
+$header = "TotLoop","LoopNormInter",
+"OldcollateralETH","OraclePrice","OldCollateralUSD",
 "NewCreditUSD",
 # "NewKeet10pctUSD", 
-"NewCollateralETH",`
-"TotCollateralETH","TotCollateralUSD", "TotCreditUSD",`
-# "NetRevenueUSD","TotKeet10pctUSD","Leverage",`
-# "StartSoftLiquidUSD","EndLiquidPriceUSD","LiquidPreisMaxMint",`
-# "CollLoanRatio","LoanColl",
+"NewCollateralETH",
+"TotCollateralETH","TotCollateralUSD", "TotCreditUSD",
+"NetRevenueUSD",
+# ,"TotKeet10pctUSD","Leverage",`
+"StartSoftLiquidUSD","EndLiquidPriceUSD","LiquidPreisMaxMint",
+# ,"CollLoanRatio","LoanColl"`
 "leverageEfficiency"
-
 
 #-------------------------------------------------------
 # Functions
 #-------------------------------------------------------
 function GetMaxMintAndLiquidationPriceCalculation {
     Param ([int]$Bänder)
-
     $data = @'
 Bänder	MaxMinbar	Liquidationpreisberechnung
 4	0.8859	0.96059601
@@ -119,10 +128,11 @@ Bänder	MaxMinbar	Liquidationpreisberechnung
 '@
 
     # Convert the data into a custom object
-    $table = $data | ConvertFrom-Csv -Delimiter "`t" -Header 'Bänder', 'MaxMinbar', 'Liquidationpreisberechnung'
+    $table  = $data  | ConvertFrom-Csv -Delimiter "`t" -Header 'Bänder', 'MaxMinbar', 'Liquidationpreisberechnung'
+
     # Query the table
     $result = $table | Where-Object { $_.Bänder -eq $Bänder } | Select-Object -Property MaxMinbar, Liquidationpreisberechnung
-
+    
     Return $result
 }
 
@@ -175,58 +185,30 @@ function SetFuturePriceSimulation {
     Return $FuturePrices
 }
 
-#-----------------------------------------------------------
-# Settings
-#-----------------------------------------------------------
-
-$OutputFilePath             = "C:\Users\SonGoku78\Downloads\"
-$Suffix                     = "500_no_SaftyRatio"     # Last part of the csv Filename
-$StartCollateralETH         = 5
-$Bänder                     = 4
-$VaultSafetyUSD             = 0       # 10% Sicherheit 
-$SaftyPriceDistancePct      = 25       # % gap to oracle price eg. if a gap 25% 
-$SaftyPriceDistanceDecimal  = 1 #(100 - $SaftyPriceDistancePct) / 100
-$StartPrice                 = 1804.98
-$ParleverageEfficiency      = 5.0      # % change of previous (Old)CollateralETH based on leverage (TotCollateral)
-
-$ParPriceVariant            = "fix" #fix | pct | inc
-
-
-#"fix"
-$FuturePricesInit           = @($StartPrice)#, 1804.98)#,2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000)        
-
-#"pct" $StartPrice will be taken and the number of % 
-$ParOraclePriceIncreasePct  = 50
-$ParOraclePriceLimit        = 10000
-
-#"inc"
-$ParOraclePriceIncreaseAbs  = 500
-$ParOraclePriceLimit        = 10000
-
-$OraclePriceTable           = SetFuturePriceSimulation -ParPriceVariant $ParPriceVariant -ParStartPrice $StartPrice -ParOraclePriceLimit $ParOraclePriceLimit -ParOraclePriceIncreaseAbs $ParOraclePriceIncreaseAbs -ParOraclePriceIncreasePct $ParOraclePriceIncreasePct -ParFuturePricesInit $FuturePricesInit
-
 
 #-----------------------------------------------------------
-# Prep
+# Preparation
 #-----------------------------------------------------------
 
-$result = GetMaxMintAndLiquidationPriceCalculation -Bänder $Bänder
-$MaxUsdMinting      =  $($result.MaxMinbar)
-$LiquidationRatio   =  $($result.Liquidationpreisberechnung)
+$OraclePriceTable   = @()
+$OraclePriceTable   = SetFuturePriceSimulation -ParPriceVariant $ParPriceVariant -ParStartPrice $StartPrice -ParOraclePriceLimit $ParOraclePriceLimit -ParOraclePriceIncreaseAbs $ParOraclePriceIncreaseAbs -ParOraclePriceIncreasePct $ParOraclePriceIncreasePct -ParFuturePricesInit $ParFuturePricesInit
+$result             = GetMaxMintAndLiquidationPriceCalculation -Bänder $ParBänder
+$MaxUsdMinting      = $($result.MaxMinbar)
+$LiquidationRatio   = $($result.Liquidationpreisberechnung)
 
 $tableCalc += [PSCustomObject]@{Calculation = "#--------------------------------------------------------------------------------------------------"}
 $tableCalc += [PSCustomObject]@{Calculation = "# Settings"}
 $tableCalc += [PSCustomObject]@{Calculation = "#--------------------------------------------------------------------------------------------------"}
 $tableCalc += [PSCustomObject]@{Calculation = "# OutputFilePath         = $OutputFilePath"}
-$tableCalc += [PSCustomObject]@{Calculation = "# Bänder                 = $Bänder"}
+$tableCalc += [PSCustomObject]@{Calculation = "# Bänder                 = $ParBänder"}
 $tableCalc += [PSCustomObject]@{Calculation = "# MaxUsdMinting          = $MaxUsdMinting"}
 $tableCalc += [PSCustomObject]@{Calculation = "# LiquidationRatio       = $LiquidationRatio"}
 $tableCalc += [PSCustomObject]@{Calculation = ""}
 $tableCalc += [PSCustomObject]@{Calculation = "# ParPriceVariant        = $ParPriceVariant"}
 $tableCalc += [PSCustomObject]@{Calculation = "# OraclePrices           = $OraclePriceTable"}
-$tableCalc += [PSCustomObject]@{Calculation = "# VaultSafetyUSD         = $VaultSafetyUSD %"}
-$tableCalc += [PSCustomObject]@{Calculation = "# SaftyPriceDistancePct  = $temp %"}
-$tableCalc += [PSCustomObject]@{Calculation = "# ParleverageEfficiency  = $ParleverageEfficiency %"}    
+$tableCalc += [PSCustomObject]@{Calculation = "# VaultSafetyUSD         = $ParVaultSafetyUSD %"}
+$tableCalc += [PSCustomObject]@{Calculation = "# SaftyPriceDistancePct  = $SaftyPriceDistancePct %"}
+$tableCalc += [PSCustomObject]@{Calculation = "# ParleverageEfficiency  =  $ParleverageEfficiency %"}    
 $tableCalc += [PSCustomObject]@{Calculation = ""}
 
 if ($ParPriceVariant -eq "pct") {
@@ -258,7 +240,7 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
     $TotCollateralUSD   = $TotCollateralETH     * $OraclePriceTable[$i1]        
     $NewCreditUSD       = (($OldcollateralETH  * $OraclePriceTable[$i1])* $MaxUsdMinting) - $TotCreditUSD   # AHA
     $TotCreditUSD      += $NewCreditUSD
-    $NewKeet10pctUSD    = $NewCreditUSD         * ($VaultSafetyUSD      /100) # 10% Sicherheit
+    $NewKeet10pctUSD    = $NewCreditUSD         * ($ParVaultSafetyUSD      /100) # 10% Sicherheit
     $TotKeet10pctUSD   += $NewKeet10pctUSD  
     $NewCollateralETH   = ($NewCreditUSD        - $NewKeet10pctUSD)     / $OraclePriceTable[$i1]
     $TotCollateralETH   = $OldcollateralETH     + $NewCollateralETH
@@ -300,7 +282,7 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
 
     # Loop 2 "Interloop" :  Loop until CollateralUSD is greater than TotCreditUSD
     # $ii1=0
-    while (( $TotCreditUSD -lt (($TotCollateralETH * ($OraclePriceTable[$i1] * $SaftyPriceDistanceDecimal)) * $MaxUsdMinting)) -and $leverageEfficiency -ge $ParleverageEfficiency) {
+    while (( $TotCreditUSD -lt (($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting)) -and $leverageEfficiency -ge $ParleverageEfficiency) {
         
             $ii1++ 
             $OldcollateralETH   = $TotCollateralETH
@@ -308,7 +290,7 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
             $TotCollateralUSD   = $TotCollateralETH *   $OraclePriceTable[$i1] 
             #$NewCreditUSD       = ($TotCollateralUSD -   $TotCreditUSD) #* $MaxUsdMinting
             $NewCreditUSD       = ($TotCollateralUSD * $MaxUsdMinting) -   $TotCreditUSD    # AHA                        
-            $NewKeet10pctUSD    = $NewCreditUSD     *   ($VaultSafetyUSD/100)     # 10% Sicherheit
+            $NewKeet10pctUSD    = $NewCreditUSD     *   ($ParVaultSafetyUSD/100)     # 10% Sicherheit
             $TotKeet10pctUSD    = $TotKeet10pctUSD  +   $NewKeet10pctUSD  
             $NewCollateralETH   = ($NewCreditUSD    -   $NewKeet10pctUSD) / $OraclePriceTable[$i1]
             $TotCreditUSD       = $TotCreditUSD     +   $NewCreditUSD
@@ -323,7 +305,7 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
             $StartSoftLiquidUSD = $EndLiquidPriceUSD    / $LiquidationRatio
             $leverageEfficiency = (($TotCollateralETH - $OldcollateralETH) / $OldcollateralETH)*100
             $leverageEfficiencyPct = $leverageEfficiency/100 
-
+            $saveLast = ($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting
             
             # Add the current values as a row in the table
             $tableRows += [PSCustomObject]@{
@@ -358,6 +340,6 @@ $tableCalc | Format-Table -AutoSize
 # Display the table with headers and lines between columns
 $tableRows | Format-Table -Property $header -AutoSize | Out-String -Width 1000
 
-# Display the table with headers and lines between columns and remove single quotes
-$tableRows | Export-Csv -Path "$($ParPriceVariant)_output.csv" -Delimiter ";" -NoTypeInformation
-(Get-Content "$($ParPriceVariant)_output.csv") | ForEach-Object { $_ -replace '"', '' -replace '\?', '' } | Set-Content "$($OutputFilePath)\Output_$($ParPriceVariant)_$($Suffix).csv"
+if ($TotCreditUSD -ge $saveLast)                       { Write-Host "## Credit >= Collateral   = true $TotCreditUSD $saveLast"}
+if ($leverageEfficiency -le $ParleverageEfficiency) { Write-Host "## No more LeverageEfficency = true $leverageEfficiency"}
+Write-Host 
