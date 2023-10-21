@@ -1,4 +1,21 @@
-﻿# ------------------------------------------
+﻿param(
+    [int]$StartCollateralETH_Ext,
+    [int]$ParBänder_Ext,
+    [double]$ParVaultSafetyUSD_Ext,
+    [double]$ParSaftyPriceDistancePct_Ext,
+    [double]$ParSaftyPriceDistanceDecimal_Ext,
+    [double]$ParleverageEfficiency_Ext,
+    [double]$StartPrice_Ext,
+    [string]$ParPriceVariant_Ext,
+    [double[]]$ParFuturePricesInit_Ext,
+    [double]$ParOraclePriceIncreasePct_Ext,
+    [double]$ParOraclePriceLimit_Ext,
+    [double]$ParOraclePriceIncreaseAbs_Ext,
+    [double]$ParOraclePriceLimit2_Ext
+)
+
+
+# ------------------------------------------
 # Preparation
 # ------------------------------------------
 $OldcollateralETH   = 0
@@ -23,33 +40,34 @@ $OutputFilePath                 = "C:\Users\SonGoku78\Downloads\"
 $Suffix                         = "500_no_SaftyRatio"     # Last part of the csv Filename
 $StartCollateralETH             = 5
 $ParBänder                      = 4
+# $ParBänder                      = $ParBänder_Ext
 
 $ParVaultSafetyUSD              = 10.0       # 10% Sicherheit 
 $TestVaultSafetyUSD             = 'N'
 
-$ParSaftyPriceDistancePct       = 1.0       # % gap to oracle price eg. 25% = 0.75 + OraclePrice
+$ParSaftyPriceDistancePct       = 25.0       # % gap to oracle price eg. 25% = 0.75 + OraclePrice
 $ParSaftyPriceDistanceDecimal   = (100 - $ParSaftyPriceDistancePct) / 100
 $TestSaftyPriceDistance         = 'N'
 $TestSaftyPriceDistance         = 'N'
 
 $ParleverageEfficiency          = 5.0      # % change of previous (Old)CollateralETH based on leverage (TotCollateral)
-$TestLeverageEfficiency         = 'Y'
+$TestLeverageEfficiency         = 'N'
 
 
 $TestSoftLiquidPriceRange       = 'Y'
 
 $StartPrice                     = 1863.34
-$ParPriceVariant                = "inc" #fix | pct | inc
+$ParPriceVariant                = "inc" #fix=fix values | pct=percentage | inc=incremental 
 
 
 #"fix"
 $ParFuturePricesInit            = @(($StartPrice))#, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000)        
 
-#"pct" $StartPrice will be taken and the number of % 
+#"pct" OraclePrice will increase by % number eg: every 20% of price increase
 $ParOraclePriceIncreasePct      = 50
 $ParOraclePriceLimit            = 10000
 
-#"inc"
+#"inc" OraclePrice will increase by absolut number eg: every 500 usd of price increase
 $ParOraclePriceIncreaseAbs      = 500
 $ParOraclePriceLimit            = 2000
 
@@ -57,6 +75,7 @@ $ParOraclePriceLimit            = 2000
 #-------------------------------------------------------
 # Statistics & prints
 #-------------------------------------------------------
+$tableCalc=@()
 $Global:tableCalc=@()
 # print: variables & calculation
 $tableCalc += [PSCustomObject]@{Calculation = "#--------------------------------------------------------------------------------------------------"}
