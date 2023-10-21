@@ -3,15 +3,13 @@
     [int]$ParBänder_Ext,
     [double]$ParVaultSafetyUSD_Ext,
     [double]$ParSaftyPriceDistancePct_Ext,
-    [double]$ParSaftyPriceDistanceDecimal_Ext,
     [double]$ParleverageEfficiency_Ext,
     [double]$StartPrice_Ext,
     [string]$ParPriceVariant_Ext,
     [double[]]$ParFuturePricesInit_Ext,
     [double]$ParOraclePriceIncreasePct_Ext,
     [double]$ParOraclePriceLimit_Ext,
-    [double]$ParOraclePriceIncreaseAbs_Ext,
-    [double]$ParOraclePriceLimit2_Ext
+    [double]$ParOraclePriceIncreaseAbs_Ext
 )
 
 
@@ -32,44 +30,123 @@ $Leverage           = 0
 $CollLoanRatio      = 0
 $LoanCollRatio      = 0
 
+function FuncMode{
+    param (
+        [string]$Variable,
+        [string]$ValueText,
+        [double]$ValueNumb,
+        [array]$ValueArray        
+    )
+    $result = $null
+
+    #StartCollateralETH
+    if ($Variable -eq 'StartCollateralETH'){
+        if ($Mode -eq "local") {$result = $ValueNumb} else {$result = $StartCollateralETH_Ext}
+    }
+
+    # ParBänder
+    if ($Variable -eq 'ParBänder'){
+        if ($Mode -eq "local") {$result = $ValueNumb} else {$result = $ParBänder_Ext}
+    }
+
+    # ParVaultSafetyUSD
+    if ($Variable -eq 'ParVaultSafetyUSD'){
+        if ($Mode -eq "local") {$result = $ValueNumb} else {$result = $ParVaultSafetyUSD_Ext}
+    }
+
+    # ParSaftyPriceDistancePct
+    if ($Variable -eq 'ParSaftyPriceDistancePct'){
+        if ($Mode -eq "local") {$result = $ValueNumb} else {$result = $ParSaftyPriceDistancePct_Ext}
+    }
+
+    # ParleverageEfficiency
+    if ($Variable -eq 'ParleverageEfficiency'){
+        if ($Mode -eq "local") {$result = $ValueNumb} else {$result = $ParleverageEfficiency_Ext}
+    }
+
+    # StartPrice
+    if ($Variable -eq 'StartPrice'){
+        if ($Mode -eq "local") {$result = $ValueNumb} else {$result = $StartPrice_Ext}
+    }
+
+    # ParPriceVariant
+    if ($Variable -eq 'ParPriceVariant'){
+        if ($Mode -eq "local") {$result = $ValueText} else {$result = $ParPriceVariant_Ext}
+    }
+
+    # ParFuturePricesInit
+    if ($Variable -eq 'ParFuturePricesInit'){
+        if ($Mode -eq "local") {$result = $ValueArray} else {$result = $ParFuturePricesInit_Ext}
+    }
+
+    # ParOraclePriceIncreasePct
+    if ($Variable -eq 'ParOraclePriceIncreasePct'){
+        if ($Mode -eq "local") {$result = $ValueNumb} else {$result = $ParOraclePriceIncreasePct_Ext}
+    }
+
+    # ParOraclePriceLimit
+    if ($Variable -eq 'ParOraclePriceLimit'){
+        if ($Mode -eq "local") {$result = $ValueNumb} else {$result = $ParOraclePriceLimit_Ext}
+    }
+
+    # ParOraclePriceIncreaseAbs
+    if ($Variable -eq 'ParOraclePriceIncreaseAbs'){
+        if ($Mode -eq "local") {$result = $ValueNumb} else {$result = $ParOraclePriceIncreaseAbs_Ext}
+    }
+
+    # ParOraclePriceLimit
+    if ($Variable -eq 'ParOraclePriceLimit'){
+        if ($Mode -eq "local") {$result = $ValueNumb} else {$result = $ParOraclePriceLimit_Ext}
+    }
+
+    Return $result
+}
+
 #-----------------------------------------------------------
 # Settings
 #-----------------------------------------------------------
-
+# Lokal Settings
 $OutputFilePath                 = "C:\Users\SonGoku78\Downloads\"
 $Suffix                         = "500_no_SaftyRatio"     # Last part of the csv Filename
-$StartCollateralETH             = 5
-$ParBänder                      = 4
-# $ParBänder                      = $ParBänder_Ext
 
-$ParVaultSafetyUSD              = 10.0       # 10% Sicherheit 
 $TestVaultSafetyUSD             = 'N'
-
-$ParSaftyPriceDistancePct       = 25.0       # % gap to oracle price eg. 25% = 0.75 + OraclePrice
-$ParSaftyPriceDistanceDecimal   = (100 - $ParSaftyPriceDistancePct) / 100
 $TestSaftyPriceDistance         = 'N'
-$TestSaftyPriceDistance         = 'N'
-
-$ParleverageEfficiency          = 5.0      # % change of previous (Old)CollateralETH based on leverage (TotCollateral)
 $TestLeverageEfficiency         = 'N'
+$TestSoftLiquidPriceRange       = 'N'
 
 
-$TestSoftLiquidPriceRange       = 'Y'
+$Global:Mode = 'local'
 
-$StartPrice                     = 1863.34
-$ParPriceVariant                = "inc" #fix=fix values | pct=percentage | inc=incremental 
+$StartCollateralETH             = FuncMode -Variable 'StartCollateralETH'        -ValueNumb 5        
+$ParBänder                      = FuncMode -Variable 'ParBänder'                 -ValueNumb 4       
 
+#                                 z.B. 10% Sicherheit 
+$ParVaultSafetyUSD              = FuncMode -Variable 'ParVaultSafetyUSD'         -ValueNumb 10.0    
+
+#                                 % gap to oracle price eg. 25% = 0.75 + OraclePrice    
+$ParSaftyPriceDistancePct       = FuncMode -Variable 'ParSaftyPriceDistancePct'  -ValueNumb 25.0    
+$ParSaftyPriceDistanceDecimal   = (100 - $ParSaftyPriceDistancePct    ) / 100
+
+#                                 % change of previous (Old)CollateralETH based on leverage (TotCollateral)                                    
+$ParleverageEfficiency          = FuncMode -Variable 'ParleverageEfficiency'     -ValueNumb 5.0     
+
+$StartPrice                     = FuncMode -Variable 'StartPrice'                -ValueNumb 1863.34 
+
+#                                 fix=fix values | pct=percentage | inc=incremental 
+$ParPriceVariant                = FuncMode -Variable 'ParPriceVariant'           -ValueText 'inc'   
 
 #"fix"
-$ParFuturePricesInit            = @(($StartPrice))#, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000)        
+$ParFuturePricesInit            = FuncMode -Variable 'ParPriceVariant'           -ValueArray @(($StartPrice))#, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000)       
 
-#"pct" OraclePrice will increase by % number eg: every 20% of price increase
-$ParOraclePriceIncreasePct      = 50
-$ParOraclePriceLimit            = 10000
+#                                "pct" OraclePrice will increase by % number eg: every 20% of price increase
+$ParOraclePriceIncreasePct      = FuncMode -Variable 'ParOraclePriceIncreasePct' -ValueNumb 50     
 
-#"inc" OraclePrice will increase by absolut number eg: every 500 usd of price increase
-$ParOraclePriceIncreaseAbs      = 500
-$ParOraclePriceLimit            = 2000
+$ParOraclePriceLimit            = FuncMode -Variable 'ParOraclePriceLimit'       -ValueNumb 10000     
+
+#                                "inc" OraclePrice will increase by absolut number eg: every 500 usd of price increase
+$ParOraclePriceIncreaseAbs      = FuncMode -Variable 'ParOraclePriceIncreaseAbs' -ValueNumb 500 
+$ParOraclePriceLimit            = FuncMode -Variable 'ParOraclePriceLimit'       -ValueNumb 2000     
+
 
 
 #-------------------------------------------------------
