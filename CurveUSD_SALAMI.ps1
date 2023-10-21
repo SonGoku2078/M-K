@@ -31,8 +31,9 @@ $ParSaftyPriceDistancePct       = 25.0       # % gap to oracle price eg. 25% = 0
 $ParSaftyPriceDistanceDecimal   = (100 - $ParSaftyPriceDistancePct) / 100
 $TestSaftyPriceDistance         = 'N'
 
-$ParleverageEfficiency          = 5.0      # % change of previous (Old)CollateralETH based on leverage (TotCollateral)
-$TestLeverageEfficiency         = 'Y'
+$ParleverageEfficiency          = 1.0      # % change of previous (Old)CollateralETH based on leverage (TotCollateral)
+$TestLeverageEfficiency         = 'N'
+
 
 $StartPrice                     = 1863.34
 $ParPriceVariant                = "inc" #fix | pct | inc
@@ -86,15 +87,11 @@ if ($TestLeverageEfficiency -eq "Y") {
     $header = "TotLoop","LoopNormInter","OldcollateralETH","OraclePrice","OldCollateralUSD","NewCreditUSD","TotCollateralETH","leverageEfficiency"
 }
 
-if ($TestVaultSafetyUSD     -eq "Y") {
-    $header = "TotLoop","LoopNormInter","OldcollateralETH","OraclePrice","OldCollateralUSD","NewCreditUSD","NewKeet10pctUSD", "NewCollateralETH", "TotCollateralETH","TotCollateralUSD", "TotCreditUSD","TotKeet10pctUSD"
-}
-
 if ($TestSaftyPriceDistance -eq "Y") {
     $header = "TotLoop","LoopNormInter","OldcollateralETH","OraclePrice","MaxCollUSD","MaxCollUSDwSaftyPrice", "TotCreditUSD","TotCollateralETH","TotCollateralUSD","LoanColl"
 }
 
-if ($TestLeverageEfficiency -eq "N" -and $TestVaultSafetyUSD -eq "N" -and $TestSaftyPriceDistance -eq "N") {
+if ($TestLeverageEfficiency -eq "N" -and $TestSaftyPriceDistance -eq "N") {
 $header = "TotLoop",
 "LoopNormInter",
 "OldcollateralETH",
@@ -270,7 +267,7 @@ if ($ParPriceVariant -eq "inc") {
 $tableCalc += [PSCustomObject]@{Calculation = ""}
 $tableCalc += [PSCustomObject]@{Calculation = "# TestVaultSafetyUSD     : Test activ = $TestVaultSafetyUSD"}
 $tableCalc += [PSCustomObject]@{Calculation = "# TestLeverageEfficiency : Test activ = $TestLeverageEfficiency"}
-$tableCalc += [PSCustomObject]@{Calculation = "# TestLeverageEfficiency : Test activ = $TestSaftyPriceDistance"}
+$tableCalc += [PSCustomObject]@{Calculation = "# TestSaftyPriceDistance : Test activ = $TestSaftyPriceDistance"}
 
 
 $tableRows = @()
@@ -339,7 +336,8 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
 
     # Loop 2 "Interloop" :  Loop until CollateralUSD is greater than TotCreditUSD
     # $ii1=0
-    while (( $TotCreditUSD -lt (($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting)) -and $leverageEfficiency -ge $ParleverageEfficiency) {
+    while (( $TotCreditUSD -lt (($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting)) -and $leverageEfficiency -ge $ParleverageEfficiency) 
+    {
         
             $ii1++ 
             $OldcollateralETH   = $TotCollateralETH
@@ -362,7 +360,6 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
             $StartSoftLiquidUSD = $EndLiquidPriceUSD    / $LiquidationRatio
             $leverageEfficiency = (($TotCollateralETH - $OldcollateralETH) / $OldcollateralETH)*100
             $leverageEfficiencyPct = $leverageEfficiency/100 
-            $saveLast                  = ($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting
             $MaxCollUSDwSaftyPriceDist = ($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting
             $MaxCollUSD                = ($TotCollateralETH * ($OraclePriceTable[$i1] )                               ) * $MaxUsdMinting
             
@@ -401,14 +398,6 @@ $tableCalc | Format-Table -AutoSize
 # Display the table with headers and lines between columns
 $tableRows | Format-Table -Property $header -AutoSize | Out-String -Width 1000
 
-if ($TestLeverageEfficiency -eq "Y") {
-    if ($TotCreditUSD -ge $saveLast) {
-        Write-Host "## Interloop criteria NOT true anymore : "
-        Write-Host "## -> TotCreditUSD <= Collateral  = false  "
-        Write-Host "## --> TotCreditUSD = $TotCreditUSD | TotCollateralUSD = $saveLast"
-        Write-Host #empty line
-    }
-}
 if ($TestLeverageEfficiency -eq "Y") {
     if ($leverageEfficiency -le $ParleverageEfficiency) {
         Write-Host "## LeverageEfficency below benchmark :"
