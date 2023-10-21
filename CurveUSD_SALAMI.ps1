@@ -29,12 +29,12 @@ $TestVaultSafetyUSD             = 'N'
 
 $ParSaftyPriceDistancePct       = 25.0       # % gap to oracle price eg. 25% = 0.75 + OraclePrice
 $ParSaftyPriceDistanceDecimal   = (100 - $ParSaftyPriceDistancePct) / 100
-$TestSaftyPriceDistance         = 'Y'
+$TestSaftyPriceDistance         = 'N'
 
 $ParleverageEfficiency          = 5.0      # % change of previous (Old)CollateralETH based on leverage (TotCollateral)
-$TestLeverageEfficiency         = 'N'
+$TestLeverageEfficiency         = 'Y'
 
-$StartPrice                     = 1804.98
+$StartPrice                     = 1863.34
 $ParPriceVariant                = "inc" #fix | pct | inc
 
 
@@ -77,7 +77,6 @@ $tableCalc += [PSCustomObject]@{Calculation = "# LiquidPreisMaxMint = OraclePric
 $tableCalc += [PSCustomObject]@{Calculation = "# EndLiquidPriceUSD  = ((TotCreditUSD       /   TotCollateralUSD)    /  MaxUsdMinting) * LiquidPreisMaxMint"}
 $tableCalc += [PSCustomObject]@{Calculation = "# StartSoftLiquidUSD = EndLiquidPriceUSD    /   LiquidationRatio"}
 $tableCalc += [PSCustomObject]@{Calculation = "# leverageEfficiency = ((TotCollateralETH   - OldcollateralETH)      / OldcollateralETH)*100"} 
-$tableCalc += [PSCustomObject]@{Calculation = "# OracleSaftyPrice   = OraclePriceTable[i1] * ParSaftyPriceDistanceDecimal"}
 $tableCalc += [PSCustomObject]@{Calculation = ""}
 
 
@@ -92,7 +91,7 @@ if ($TestVaultSafetyUSD     -eq "Y") {
 }
 
 if ($TestSaftyPriceDistance -eq "Y") {
-    $header = "TotLoop","LoopNormInter","OldcollateralETH","OraclePrice","MaxCollUSDwSaftyPrice","OracleSaftyPrice","OldCollateralUSD","NewCreditUSD","NewCollateralETH","TotCollateralETH","TotCollateralUSD", "TotCreditUSD"
+    $header = "TotLoop","LoopNormInter","OldcollateralETH","OraclePrice","MaxCollUSD","MaxCollUSDwSaftyPrice", "TotCreditUSD","TotCollateralETH","TotCollateralUSD","LoanColl"
 }
 
 if ($TestLeverageEfficiency -eq "N" -and $TestVaultSafetyUSD -eq "N" -and $TestSaftyPriceDistance -eq "N") {
@@ -100,7 +99,6 @@ $header = "TotLoop",
 "LoopNormInter",
 "OldcollateralETH",
 "OraclePrice",
-"OracleSaftyPrice",
 "OldCollateralUSD",
 "NewCreditUSD",
 "NewKeet10pctUSD", 
@@ -308,8 +306,8 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
     $StartSoftLiquidUSD = $EndLiquidPriceUSD    / $LiquidationRatio
     $leverageEfficiency = (($TotCollateralETH - $OldcollateralETH) / $OldcollateralETH)*100 
     $leverageEfficiencyPct = $leverageEfficiency/100
-    $OracleSaftyPrice   = $OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal
     $MaxCollUSDwSaftyPriceDist = ($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting
+    $MaxCollUSD                = ($TotCollateralETH * ($OraclePriceTable[$i1] )                               ) * $MaxUsdMinting
         
     $tableRows += [PSCustomObject]@{
         TotLoop             = $i9++
@@ -325,7 +323,6 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
         NewKeet10pctUSD     = "{0,15:N0}" -f $NewKeet10pctUSD
         TotKeet10pctUSD     = "{0,15:N0}" -f $TotKeet10pctUSD
         OraclePrice         = "{0,11:N0}" -f $OraclePriceTable[$i1]
-        OracleSaftyPrice    = "{0,11:N0}" -f $OracleSaftyPrice
         Leverage            = "{0,08:N1}" -f $Leverage
         CollLoanRatio       = "{0,12:P0}" -f $CollLoanRatio 
         LoanColl            = "{0,08:P0}" -f $LoanColl
@@ -333,7 +330,8 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
         EndLiquidPriceUSD   = "{0,17:N0}" -f $EndLiquidPriceUSD  
         StartSoftLiquidUSD  = "{0,18:N0}" -f $StartSoftLiquidUSD 
         leverageEfficiency  = "{0,18:P3}" -f $leverageEfficiencyPct 
-        MaxCollUSDwSaftyPrice = "{0,18:N0}" -f $MaxCollUSDwSaftyPriceDist
+        MaxCollUSDwSaftyPrice = "{0,21:N0}" -f $MaxCollUSDwSaftyPriceDist
+        MaxCollUSD          = "{0,10:N0}" -f $MaxCollUSD
         
     }
     # $NewCollateralETH=0
@@ -364,9 +362,9 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
             $StartSoftLiquidUSD = $EndLiquidPriceUSD    / $LiquidationRatio
             $leverageEfficiency = (($TotCollateralETH - $OldcollateralETH) / $OldcollateralETH)*100
             $leverageEfficiencyPct = $leverageEfficiency/100 
-            $OracleSaftyPrice   = $OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal
-            $saveLast = ($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting
+            $saveLast                  = ($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting
             $MaxCollUSDwSaftyPriceDist = ($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting
+            $MaxCollUSD                = ($TotCollateralETH * ($OraclePriceTable[$i1] )                               ) * $MaxUsdMinting
             
             # Add the current values as a row in the table
             $tableRows += [PSCustomObject]@{
@@ -383,7 +381,6 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
                 NewKeet10pctUSD     = "{0,15:N0}" -f $NewKeet10pctUSD
                 TotKeet10pctUSD     = "{0,15:N0}" -f $TotKeet10pctUSD
                 OraclePrice         = "{0,11:N0}" -f $OraclePriceTable[$i1]
-                OracleSaftyPrice    = "{0,11:N0}" -f $OracleSaftyPrice
                 Leverage            = "{0,08:N1}" -f $Leverage
                 CollLoanRatio       = "{0,12:P0}" -f $CollLoanRatio 
                 LoanColl            = "{0,08:P0}" -f $LoanColl
@@ -391,7 +388,8 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
                 EndLiquidPriceUSD   = "{0,17:N0}" -f $EndLiquidPriceUSD  
                 StartSoftLiquidUSD  = "{0,18:N0}" -f $StartSoftLiquidUSD 
                 leverageEfficiency  = "{0,18:P1}" -f $leverageEfficiencyPct 
-                MaxCollUSDwSaftyPrice = "{0,18:N0}" -f $MaxCollUSDwSaftyPriceDist
+                MaxCollUSDwSaftyPrice = "{0,21:N0}" -f $MaxCollUSDwSaftyPriceDist
+                MaxCollUSD          = "{0,10:N0}" -f $MaxCollUSD
             }
             $NewCollateralETH=0
     }
@@ -419,7 +417,7 @@ if ($TestLeverageEfficiency -eq "Y") {
         Write-Host #empty line
 }
 if ($TestSaftyPriceDistance -eq "Y") {
-    Write-Host "## SaftyPriceDistance to Oracle is : $ParSaftyPriceDistancePct with a price of $OracleSaftyPrice at oracleprice of $OraclePriceTable"
+    Write-Host "## SaftyPriceDistance to Oracle is : $ParSaftyPriceDistancePct and max Loan-Collateral Ratio is : $LoanColl"
 }
 Write-Host #empty line
 
