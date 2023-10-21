@@ -309,23 +309,11 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
 
     $LiquidPreisMax     = $OraclePriceTable[$i1] * $LiquidationRatio
     $Differenz          = $LoanCollRatio        / $MaxUsdMinting
-    $LiquidationPrice   = $LiquidPreisMax       * $Differenz
-    $EndSoftLiquid      = $LiquidationPrice     * $Differenz
-    $StartSoftLiquid    = $LiquidPreisMax       / $LiquidationRatio
 
-    # $EndLiquidPriceUSD  = (($TotCreditUSD       / $TotCollateralUSD)    / $MaxUsdMinting)   * $LiquidPreisMax
     $EndLiquidPriceUSD  = $LiquidPreisMax       * $Differenz
     $StartSoftLiquidUSD = $EndLiquidPriceUSD    / $LiquidationRatio
-    # $StartSoftLiquidUSD = $LiquidPreisMax       * $LiquidationRatio
     
-    Write-Host "____________1 LiquidPreisMax  : $LiquidPreisMax "
-    Write-Host "____________2 LiquidPrice     : $LiquidPrice    "     
-    Write-Host "____________1 StartSoftLiquid : $StartSoftLiquid"    
-    Write-Host "____________2 StartSoftLiquid : $StartSoftLiquidUSD"    
-    Write-Host "____________1 EndSoftLiquid   : $EndSoftLiquid"    
-    Write-Host "____________2 EndSoftLiquid   : $EndLiquidPriceUSD"
-
-    
+       
 
     $leverageEfficiency = (($TotCollateralETH - $OldcollateralETH) / $OldcollateralETH)*100 
     $leverageEfficiencyPct = $leverageEfficiency/100
