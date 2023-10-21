@@ -27,12 +27,12 @@ $ParBänder                      = 4
 $ParVaultSafetyUSD              = 10.0       # 10% Sicherheit 
 $TestVaultSafetyUSD             = 'N'
 
-$ParSaftyPriceDistancePct       = 25.0       # % gap to oracle price eg. 25% = 0.75 + OraclePrice
+$ParSaftyPriceDistancePct       = 1.0       # % gap to oracle price eg. 25% = 0.75 + OraclePrice
 $ParSaftyPriceDistanceDecimal   = (100 - $ParSaftyPriceDistancePct) / 100
 $TestSaftyPriceDistance         = 'N'
 
-$ParleverageEfficiency          = 1.0      # % change of previous (Old)CollateralETH based on leverage (TotCollateral)
-$TestLeverageEfficiency         = 'N'
+$ParleverageEfficiency          = 5.0      # % change of previous (Old)CollateralETH based on leverage (TotCollateral)
+$TestLeverageEfficiency         = 'Y'
 
 
 $StartPrice                     = 1863.34
@@ -398,11 +398,11 @@ $tableCalc | Format-Table -AutoSize
 # Display the table with headers and lines between columns
 $tableRows | Format-Table -Property $header -AutoSize | Out-String -Width 1000
 
+
 if ($TestLeverageEfficiency -eq "Y") {
-    if ($leverageEfficiency -le $ParleverageEfficiency) {
         Write-Host "## LeverageEfficency below benchmark :"
         Write-Host "## -> leverageEfficiency <= Benchmark = true "
-        Write-Host "## --> Effectiv-LeverageEfficiency = $leverageEfficiency | Benchmark = $ParleverageEfficiency"}
+        Write-Host "## --> Effectiv-LeverageEfficiency = $leverageEfficiency | Benchmark = $ParleverageEfficiency"
         Write-Host #empty line
 }
 if ($TestSaftyPriceDistance -eq "Y") {
