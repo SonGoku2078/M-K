@@ -78,8 +78,14 @@ $tableCalc += [PSCustomObject]@{Calculation = "# BreakEven          = (StartColl
 $tableCalc += [PSCustomObject]@{Calculation = "# LiquidPreisMaxMint = OraclePriceTable[i1] +   LiquidationRatio"}
 $tableCalc += [PSCustomObject]@{Calculation = "# EndLiquidPriceUSD  = ((TotCreditUSD       /   TotCollateralUSD)    /  MaxUsdMinting) * LiquidPreisMaxMint"}
 $tableCalc += [PSCustomObject]@{Calculation = "# StartSoftLiquidUSD = EndLiquidPriceUSD    /   LiquidationRatio"}
-$tableCalc += [PSCustomObject]@{Calculation = "# leverageEfficiency = ((TotCollateralETH   - OldcollateralETH)      / OldcollateralETH)*100"} 
-$tableCalc += [PSCustomObject]@{Calculation = ""}
+$tableCalc += [PSCustomObject]@{Calculation = "# leverageEfficiency = ((TotCollateralETH   -   OldcollateralETH)      / OldcollateralETH)*100"} 
+$tableCalc += [PSCustomObject]@{Calculation = "# LiquidPreisMax     = OraclePriceTable[i1] *   LiquidationRatio"}
+$tableCalc += [PSCustomObject]@{Calculation = "# Differenz          = LoanCollRatio        /   MaxUsdMinting"}
+$tableCalc += [PSCustomObject]@{Calculation = "# EndLiquidPriceUSD  = LiquidPreisMax       *   Differenz"}
+$tableCalc += [PSCustomObject]@{Calculation = "# Differenz          = LoanCollRatio        /   MaxUsdMinting"}
+$tableCalc += [PSCustomObject]@{Calculation = "# EndLiquidPriceUSD  = LiquidPreisMax       *   Differenz"}
+$tableCalc += [PSCustomObject]@{Calculation = "# StartSoftLiquidUSD = EndLiquidPriceUSD    /  LiquidationRatio"}
+              
 
 
 # Create a custom table header
@@ -312,8 +318,7 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
 
     $EndLiquidPriceUSD  = $LiquidPreisMax       * $Differenz
     $StartSoftLiquidUSD = $EndLiquidPriceUSD    / $LiquidationRatio
-    
-       
+           
 
     $leverageEfficiency = (($TotCollateralETH - $OldcollateralETH) / $OldcollateralETH)*100 
     $leverageEfficiencyPct = $leverageEfficiency/100
@@ -367,8 +372,6 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
             $CollLoanRatio      = $TotCollateralUSD /   $TotCreditUSD
             $LoanCollRatio      = $TotCreditUSD     /   $TotCollateralUSD
             $NetRevenueUSD      = $TotCollateralUSD -   $TotCreditUSD + $TotKeet10pctUSD
-            $LiquidPreisMax     = $OraclePriceTable[$i1] + $LiquidationRatio
-
             $LiquidPreisMax     = $OraclePriceTable[$i1] * $LiquidationRatio
             $Differenz          = $LoanCollRatio        / $MaxUsdMinting        
             $EndLiquidPriceUSD  = $LiquidPreisMax       * $Differenz  
