@@ -6,10 +6,12 @@
     [double]$ParleverageEfficiency_Ext,
     [double]$StartPrice_Ext,
     [string]$ParPriceVariant_Ext,
+    [string]$ParMode_Ext,
     [double[]]$ParFuturePricesInit_Ext,
     [double]$ParOraclePriceIncreasePct_Ext,
     [double]$ParOraclePriceLimit_Ext,
-    [double]$ParOraclePriceIncreaseAbs_Ext
+    [double]$ParOraclePriceIncreaseAbs_Ext,
+    [string]$ParKey_Ext
 )
 
 
@@ -107,15 +109,16 @@ function FuncMode{
 #-----------------------------------------------------------
 # Lokal Settings
 $OutputFilePath                 = "C:\Users\SonGoku78\Downloads\"
-$Suffix                         = "500_no_SaftyRatio"     # Last part of the csv Filename
+$Suffix                         = "BatchTest_Baender1_50"     # Last part of the csv Filename
 
 $TestVaultSafetyUSD             = 'N'
 $TestSaftyPriceDistance         = 'N'
 $TestLeverageEfficiency         = 'N'
 $TestSoftLiquidPriceRange       = 'N'
 
-
-$Global:Mode = 'local'
+$ParKey      = $ParKey_Ext
+$Global:Mode = $ParMode_Ext
+# $Global:Mode = 'local'
 
 $StartCollateralETH             = FuncMode -Variable 'StartCollateralETH'        -ValueNumb 5        
 $ParBänder                      = FuncMode -Variable 'ParBänder'                 -ValueNumb 4       
@@ -220,8 +223,8 @@ $header =
 "EndLiquidPriceUSD",
 "LiquidPreisMaxMint",
 # "CollLoanRatio",
-"LoanCollRatio"
-# ,
+"LoanCollRatio",
+"ParKey"
 # "leverageEfficiency"
 }
 
@@ -445,7 +448,8 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
         StartSoftLiquidUSD  = "{0,18:N0}" -f $StartSoftLiquidUSD 
         leverageEfficiency  = "{0,18:P3}" -f $leverageEfficiencyPct 
         MaxCollUSDwSaftyPrice = "{0,21:N0}" -f $MaxCollUSDwSaftyPriceDist
-        MaxCollUSD          = "{0,10:N0}" -f $MaxCollUSD
+        MaxCollUSD          = "{0,10:N0}" -f $MaxCollUSD 
+        ParKey              =                $ParKey
         
     }
     # $NewCollateralETH=0
@@ -507,6 +511,7 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
                 leverageEfficiency  = "{0,18:P1}" -f $leverageEfficiencyPct 
                 MaxCollUSDwSaftyPrice = "{0,21:N0}" -f $MaxCollUSDwSaftyPriceDist
                 MaxCollUSD          = "{0,10:N0}" -f $MaxCollUSD
+                ParKey              =                $ParKey
             }
             $NewCollateralETH=0
     }
@@ -517,6 +522,12 @@ $tableCalc | Format-Table -AutoSize
 
 # Display the table with headers and lines between columns
 $tableRows | Format-Table -Property $header -AutoSize | Out-String -Width 1000
+
+# Display the table with headers and lines between columns and remove single quotes
+# $tableRows | Export-Csv -Path "$($ParPriceVariant)_output.csv" -Delimiter ";" -NoTypeInformation -Append
+# (Get-Content "$($ParPriceVariant)_output.csv") | ForEach-Object { $_ -replace '"', '' -replace '\?', '' } | Set-Content "$($OutputFilePath)\Output_$($ParPriceVariant)_$($Suffix).csv"
+$tableRows | Export-Csv -Path "$($ParPriceVariant)_output.csv" -Delimiter ";" -NoTypeInformation -Append
+(Get-Content "test1_output.csv") | ForEach-Object { $_ -replace '"', '' } | Set-Content "$($OutputFilePath)\Output_$($ParPriceVariant)_$($Suffix).csv"
 
 
 if ($TestLeverageEfficiency -eq "Y") {
