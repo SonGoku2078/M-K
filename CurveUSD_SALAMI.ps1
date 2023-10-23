@@ -108,7 +108,8 @@ function FuncMode{
 # Settings
 #-----------------------------------------------------------
 # Lokal Settings
-$OutputFilePath                 = "C:\Users\SonGoku78\Downloads\"
+# $OutputFilePath                 = "C:\Users\SonGoku78\Downloads\"
+$OutputFilePath                 = $PSScriptRoot
 $Suffix                         = "BatchTest_Baender1_50"     # Last part of the csv Filename
 
 $TestVaultSafetyUSD             = 'N'
@@ -117,8 +118,8 @@ $TestLeverageEfficiency         = 'N'
 $TestSoftLiquidPriceRange       = 'N'
 
 $ParKey      = $ParKey_Ext
-$Global:Mode = $ParMode_Ext
-# $Global:Mode = 'local'
+# $Global:Mode = $ParMode_Ext
+$Global:Mode = 'local'
 
 $StartCollateralETH             = FuncMode -Variable 'StartCollateralETH'        -ValueNumb 5        
 $ParBänder                      = FuncMode -Variable 'ParBänder'                 -ValueNumb 4       
@@ -131,7 +132,7 @@ $ParSaftyPriceDistancePct       = FuncMode -Variable 'ParSaftyPriceDistancePct' 
 $ParSaftyPriceDistanceDecimal   = (100 - $ParSaftyPriceDistancePct    ) / 100
 
 #                                 % change of previous (Old)CollateralETH based on leverage (TotCollateral)                                    
-$ParleverageEfficiency          = FuncMode -Variable 'ParleverageEfficiency'     -ValueNumb 5.0     
+$ParleverageEfficiency          = FuncMode -Variable 'ParleverageEfficiency'     -ValueNumb 0.0     
 
 $StartPrice                     = FuncMode -Variable 'StartPrice'                -ValueNumb 1863.34 
 
@@ -141,14 +142,14 @@ $ParPriceVariant                = FuncMode -Variable 'ParPriceVariant'          
 #"fix"
 $ParFuturePricesInit            = FuncMode -Variable 'ParPriceVariant'           -ValueArray @(($StartPrice))#, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000)       
 
-#                                "pct" OraclePrice will increase by % number eg: every 20% of price increase
+#"pct"                           OraclePrice will increase by % number eg: every 20% of price increase
 $ParOraclePriceIncreasePct      = FuncMode -Variable 'ParOraclePriceIncreasePct' -ValueNumb 50     
 
 $ParOraclePriceLimit            = FuncMode -Variable 'ParOraclePriceLimit'       -ValueNumb 10000     
 
-#                                "inc" OraclePrice will increase by absolut number eg: every 500 usd of price increase
+#"inc"                            OraclePrice will increase by absolut number eg: every 500 usd of price increase
 $ParOraclePriceIncreaseAbs      = FuncMode -Variable 'ParOraclePriceIncreaseAbs' -ValueNumb 500 
-$ParOraclePriceLimit            = FuncMode -Variable 'ParOraclePriceLimit'       -ValueNumb 2000     
+$ParOraclePriceLimit            = FuncMode -Variable 'ParOraclePriceLimit'       -ValueNumb 10000     
 
 
 
@@ -523,11 +524,34 @@ $tableCalc | Format-Table -AutoSize
 # Display the table with headers and lines between columns
 $tableRows | Format-Table -Property $header -AutoSize | Out-String -Width 1000
 
-# Display the table with headers and lines between columns and remove single quotes
+# # Display the table with headers and lines between columns and remove single quotes
 # $tableRows | Export-Csv -Path "$($ParPriceVariant)_output.csv" -Delimiter ";" -NoTypeInformation -Append
-# (Get-Content "$($ParPriceVariant)_output.csv") | ForEach-Object { $_ -replace '"', '' -replace '\?', '' } | Set-Content "$($OutputFilePath)\Output_$($ParPriceVariant)_$($Suffix).csv"
-$tableRows | Export-Csv -Path "$($ParPriceVariant)_output.csv" -Delimiter ";" -NoTypeInformation -Append
-(Get-Content "test1_output.csv") | ForEach-Object { $_ -replace '"', '' } | Set-Content "$($OutputFilePath)\Output_$($ParPriceVariant)_$($Suffix).csv"
+
+# $PathAndFilename = "$($OutputFilePath)\Output_$($ParPriceVariant)_$($Suffix).csv"
+# (Get-Content "test1_output.csv") | ForEach-Object { $_ -replace '"', '' } | Set-Content $PathAndFilename
+
+# Import required module
+Import-Module ImportExcel
+
+$PathAndFilename = "$($OutputFilePath)\Output_$($ParPriceVariant)_$($Suffix).xlsx"
+
+# If the file already exists, delete it
+if (Test-Path $PathAndFilename) {
+    Remove-Item $PathAndFilename
+}
+
+# Export the data to Excel (.xlsx)
+$tableRows | Export-Excel -Path $PathAndFilename -WorksheetName 'Sheet1' -AutoSize
+
+# If you still want to replace '?' with nothing in the Excel file
+$excelData = Import-Excel -Path $PathAndFilename
+$excelData | ForEach-Object {
+    $_.PSObject.Properties | ForEach-Object {
+        $_.Value = $_.Value -replace '\?', ''
+    }
+}
+$excelData | Export-Excel -Path $PathAndFilename -WorksheetName 'Sheet1' -AutoSize -ClearSheet
+
 
 
 if ($TestLeverageEfficiency -eq "Y") {
