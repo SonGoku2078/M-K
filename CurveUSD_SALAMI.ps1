@@ -132,7 +132,7 @@ $ParSaftyPriceDistancePct       = FuncMode -Variable 'ParSaftyPriceDistancePct' 
 $ParSaftyPriceDistanceDecimal   = (100 - $ParSaftyPriceDistancePct    ) / 100
 
 #                                 % change of previous (Old)CollateralETH based on leverage (TotCollateral)                                    
-$ParleverageEfficiency          = FuncMode -Variable 'ParleverageEfficiency'     -ValueNumb 20.0     
+$ParleverageEfficiency          = FuncMode -Variable 'ParleverageEfficiency'     -ValueNumb 5.0     
 
 $StartPrice                     = FuncMode -Variable 'StartPrice'                -ValueNumb 1863.34 
 
@@ -140,7 +140,7 @@ $StartPrice                     = FuncMode -Variable 'StartPrice'               
 $ParPriceVariant                = FuncMode -Variable 'ParPriceVariant'           -ValueText 'inc'   
 
 #"fix"
-$ParFuturePricesInit            = FuncMode -Variable 'ParPriceVariant'           -ValueArray @(($StartPrice))#, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000)       
+$ParFuturePricesInit            = FuncMode -Variable 'ParPriceVariant'           -ValueArray @(($StartPrice), 2000, 3000)#, 4000, 5000, 6000, 7000, 8000, 9000, 10000)       
 
 #"pct"                           OraclePrice will increase by % number eg: every 20% of price increase
 $ParOraclePriceIncreasePct      = FuncMode -Variable 'ParOraclePriceIncreasePct' -ValueNumb 50     
@@ -148,7 +148,7 @@ $ParOraclePriceIncreasePct      = FuncMode -Variable 'ParOraclePriceIncreasePct'
 $ParOraclePriceLimit            = FuncMode -Variable 'ParOraclePriceLimit'       -ValueNumb 10000     
 
 #"inc"                            OraclePrice will increase by absolut number eg: every 500 usd of price increase
-$ParOraclePriceIncreaseAbs      = FuncMode -Variable 'ParOraclePriceIncreaseAbs' -ValueNumb 500 
+$ParOraclePriceIncreaseAbs      = FuncMode -Variable 'ParOraclePriceIncreaseAbs' -ValueNumb 1000 
 $ParOraclePriceLimit            = FuncMode -Variable 'ParOraclePriceLimit'       -ValueNumb 10000     
 
 
@@ -399,9 +399,7 @@ $ii1=0
 
 # Loop 1 : Price Changes
 for ($i1 = 0; $i1 -lt $i2; $i1++) {       
-    if ($leverageEfficiency -ge $ParleverageEfficiency) {
-        break  # This will exit the loop when the condition is met
-    }
+
     $OldcollateralETH   = $TotCollateralETH
     $OldCollateralUSD   = $OldcollateralETH     * $OraclePriceTable[$i1] 
     $TotCollateralUSD   = $TotCollateralETH     * $OraclePriceTable[$i1]        
@@ -426,6 +424,9 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
 
     # $leverageEfficiency = (($TotCollateralETH - $OldcollateralETH) / $OldcollateralETH)*100 
     $leverageEfficiency = ( 100 / $OldcollateralETH * $TotCollateralETH) -100
+    if ($leverageEfficiency -le $ParleverageEfficiency) {
+        break  # This will exit the loop when the condition is met
+    }
     $leverageEfficiencyPct = $leverageEfficiency/100
     $MaxCollUSDwSaftyPriceDist = ($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting
     $MaxCollUSD                = ($TotCollateralETH * ($OraclePriceTable[$i1] )                               ) * $MaxUsdMinting
@@ -536,11 +537,11 @@ if (Test-Path $PathAndFilename) {
     $existingData = Import-Excel -Path $PathAndFilename -WorksheetName 'Sheet1' -NoHeader
 }
 
-# Combine existing data with new data
-$combinedData = $existingData + $excelData
+# # Combine existing data with new data
+# $combinedData = $existingData + $excelData
 
-# Write combined data to Excel
-$combinedData | Export-Excel -Path $PathAndFilename -WorksheetName 'Sheet1' -AutoSize -ClearSheet
+# # Write combined data to Excel
+# $combinedData | Export-Excel -Path $PathAndFilename -WorksheetName 'Sheet1' -AutoSize -ClearSheet
 
 
 if ($TestLeverageEfficiency -eq "Y") {
