@@ -110,14 +110,14 @@ function FuncMode{
 # Lokal Settings
 # $OutputFilePath                 = "C:\Users\SonGoku78\Downloads\"
 $OutputFilePath                 = $PSScriptRoot
-$Suffix                         = "BatchTest_Baender1_50"     # Last part of the csv Filename
+$Suffix                         = "Batch_Preis_Ansteig"     # Last part of the csv Filename
 
 $TestVaultSafetyUSD             = 'N'
 $TestSaftyPriceDistance         = 'N'
-$TestLeverageEfficiency         = 'N'
+$TestLeverageEfficiency         = 'Y'
 $TestSoftLiquidPriceRange       = 'N'
 
-$ParKey      = $ParKey_Ext
+# $ParKey      = $ParKey_Ext
 # $Global:Mode = $ParMode_Ext
 $Global:Mode = 'local'
 
@@ -132,7 +132,7 @@ $ParSaftyPriceDistancePct       = FuncMode -Variable 'ParSaftyPriceDistancePct' 
 $ParSaftyPriceDistanceDecimal   = (100 - $ParSaftyPriceDistancePct    ) / 100
 
 #                                 % change of previous (Old)CollateralETH based on leverage (TotCollateral)                                    
-$ParleverageEfficiency          = FuncMode -Variable 'ParleverageEfficiency'     -ValueNumb 0.0     
+$ParleverageEfficiency          = FuncMode -Variable 'ParleverageEfficiency'     -ValueNumb 20.0     
 
 $StartPrice                     = FuncMode -Variable 'StartPrice'                -ValueNumb 1863.34 
 
@@ -193,7 +193,7 @@ $tableCalc += [PSCustomObject]@{Calculation = "# StartSoftLiquidUSD = EndLiquidP
 # Create a custom table header
 
 if ($TestLeverageEfficiency -eq "Y") {
-    $header = "TotLoop","LoopNormInter","OldcollateralETH","OraclePrice","OldCollateralUSD","NewCreditUSD","TotCollateralETH","leverageEfficiency"
+    $header = "TotLoop","LoopNormInter","OldcollateralETH","OraclePrice","OldCollateralUSD","NewCreditUSD","TotCreditUSD","TotCollateralETH","leverageEfficiency"
 }
 elseif ($TestVaultSafetyUSD     -eq "Y") {
     $header = "TotLoop","LoopNormInter","OldcollateralETH","OraclePrice","OldCollateralUSD","NewCreditUSD","NewKeet10pctUSD", "NewCollateralETH", "TotCollateralETH","TotCollateralUSD", "TotCreditUSD","TotKeet10pctUSD"
@@ -224,9 +224,9 @@ $header =
 "EndLiquidPriceUSD",
 "LiquidPreisMaxMint",
 # "CollLoanRatio",
+# "leverageEfficiency"
 "LoanCollRatio",
 "ParKey"
-# "leverageEfficiency"
 }
 
 #-------------------------------------------------------
@@ -399,7 +399,9 @@ $ii1=0
 
 # Loop 1 : Price Changes
 for ($i1 = 0; $i1 -lt $i2; $i1++) {       
-    
+    if ($leverageEfficiency -ge $ParleverageEfficiency) {
+        break  # This will exit the loop when the condition is met
+    }
     $OldcollateralETH   = $TotCollateralETH
     $OldCollateralUSD   = $OldcollateralETH     * $OraclePriceTable[$i1] 
     $TotCollateralUSD   = $TotCollateralETH     * $OraclePriceTable[$i1]        
@@ -422,7 +424,8 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
     $StartSoftLiquidUSD = $EndLiquidPriceUSD    / $LiquidationRatio
            
 
-    $leverageEfficiency = (($TotCollateralETH - $OldcollateralETH) / $OldcollateralETH)*100 
+    # $leverageEfficiency = (($TotCollateralETH - $OldcollateralETH) / $OldcollateralETH)*100 
+    $leverageEfficiency = ( 100 / $OldcollateralETH * $TotCollateralETH) -100
     $leverageEfficiencyPct = $leverageEfficiency/100
     $MaxCollUSDwSaftyPriceDist = ($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting
     $MaxCollUSD                = ($TotCollateralETH * ($OraclePriceTable[$i1] )                               ) * $MaxUsdMinting
@@ -483,7 +486,8 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
             $StartSoftLiquidUSD = $EndLiquidPriceUSD    / $LiquidationRatio
 
 
-            $leverageEfficiency = (($TotCollateralETH - $OldcollateralETH) / $OldcollateralETH)*100
+            # $leverageEfficiency = (($TotCollateralETH - $OldcollateralETH) / $OldcollateralETH)*100
+            $leverageEfficiency = ( 100 / $OldcollateralETH * $TotCollateralETH) -100
             $leverageEfficiencyPct = $leverageEfficiency/100 
             $MaxCollUSDwSaftyPriceDist = ($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting
             $MaxCollUSD                = ($TotCollateralETH * ($OraclePriceTable[$i1] )                               ) * $MaxUsdMinting
@@ -522,36 +526,21 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
 $tableCalc | Format-Table -AutoSize
 
 # Display the table with headers and lines between columns
-$tableRows | Format-Table -Property $header -AutoSize | Out-String -Width 1000
-
-# # Display the table with headers and lines between columns and remove single quotes
-# $tableRows | Export-Csv -Path "$($ParPriceVariant)_output.csv" -Delimiter ";" -NoTypeInformation -Append
-
-# $PathAndFilename = "$($OutputFilePath)\Output_$($ParPriceVariant)_$($Suffix).csv"
-# (Get-Content "test1_output.csv") | ForEach-Object { $_ -replace '"', '' } | Set-Content $PathAndFilename
-
-# Import required module
-Import-Module ImportExcel
+$tableRows | Format-Table -Property $header -AutoSize | Out-String -Width 10000
 
 $PathAndFilename = "$($OutputFilePath)\Output_$($ParPriceVariant)_$($Suffix).xlsx"
 
-# If the file already exists, delete it
+# If the file already exists, read its content
+$existingData = @()
 if (Test-Path $PathAndFilename) {
-    Remove-Item $PathAndFilename
+    $existingData = Import-Excel -Path $PathAndFilename -WorksheetName 'Sheet1' -NoHeader
 }
 
-# Export the data to Excel (.xlsx)
-$tableRows | Export-Excel -Path $PathAndFilename -WorksheetName 'Sheet1' -AutoSize
+# Combine existing data with new data
+$combinedData = $existingData + $excelData
 
-# If you still want to replace '?' with nothing in the Excel file
-$excelData = Import-Excel -Path $PathAndFilename
-$excelData | ForEach-Object {
-    $_.PSObject.Properties | ForEach-Object {
-        $_.Value = $_.Value -replace '\?', ''
-    }
-}
-$excelData | Export-Excel -Path $PathAndFilename -WorksheetName 'Sheet1' -AutoSize -ClearSheet
-
+# Write combined data to Excel
+$combinedData | Export-Excel -Path $PathAndFilename -WorksheetName 'Sheet1' -AutoSize -ClearSheet
 
 
 if ($TestLeverageEfficiency -eq "Y") {
