@@ -116,6 +116,7 @@ $TestVaultSafetyUSD             = 'N'
 $TestSaftyPriceDistance         = 'N'
 $TestLeverageEfficiency         = 'N'
 $TestSoftLiquidPriceRange       = 'N'
+$TestSaftyDistanceToLP          = 'Y'
 
 # $ParKey      = $ParKey_Ext
 # $Global:Mode = $ParMode_Ext
@@ -124,12 +125,16 @@ $Global:Mode = 'local'
 $StartCollateralETH             = FuncMode -Variable 'StartCollateralETH'        -ValueNumb 5        
 $ParBänder                      = FuncMode -Variable 'ParBänder'                 -ValueNumb 4       
 
+
 #                                 z.B. 10% Sicherheit 
 $ParVaultSafetyUSD              = FuncMode -Variable 'ParVaultSafetyUSD'         -ValueNumb 10.0    
+#                                 30% Abstand zum StartSoftLiquidUSD                                 
+$ParSaftyRatioDistanceToLP      = 10 
 
 #                                 % gap to oracle price eg. 25% = 0.75 + OraclePrice    
-$ParSaftyPriceDistancePct       = FuncMode -Variable 'ParSaftyPriceDistancePct'  -ValueNumb 30.0    
+$ParSaftyPriceDistancePct       = FuncMode -Variable 'ParSaftyPriceDistancePct'  -ValueNumb 10.0    
 $ParSaftyPriceDistanceDecimal   = (100 - $ParSaftyPriceDistancePct    ) / 100
+
 
 #                                 % change of previous (Old)CollateralETH based on leverage (TotCollateral)                                    
 $ParleverageEfficiency          = FuncMode -Variable 'ParleverageEfficiency'     -ValueNumb 5.0     
@@ -144,12 +149,11 @@ $ParFuturePricesInit            = FuncMode -Variable 'ParPriceVariant'          
 
 #"pct"                           OraclePrice will increase by % number eg: every 20% of price increase
 $ParOraclePriceIncreasePct      = FuncMode -Variable 'ParOraclePriceIncreasePct' -ValueNumb 50     
-
 $ParOraclePriceLimit            = FuncMode -Variable 'ParOraclePriceLimit'       -ValueNumb 10000     
 
 #"inc"                            OraclePrice will increase by absolut number eg: every 500 usd of price increase
-$ParOraclePriceIncreaseAbs      = FuncMode -Variable 'ParOraclePriceIncreaseAbs' -ValueNumb 500 
-$ParOraclePriceLimit            = FuncMode -Variable 'ParOraclePriceLimit'       -ValueNumb 15000     
+$ParOraclePriceIncreaseAbs      = FuncMode -Variable 'ParOraclePriceIncreaseAbs' -ValueNumb 300 
+$ParOraclePriceLimit            = FuncMode -Variable 'ParOraclePriceLimit'       -ValueNumb 1000     
 
 
 
@@ -204,6 +208,9 @@ elseif ($TestSaftyPriceDistance -eq "Y") {
 elseif ($TestSoftLiquidPriceRange -eq "Y") {
     $header = "TotLoop","LoopNormInter",<#"OldcollateralETH","OraclePrice","OldCollateralUSD","TotCollateralETH","TotCollateralUSD",#> "StartSoftLiquidUSD","EndLiquidPriceUSD","LoanCollRatio"#,"LiquidPreisMaxMint"
 }
+elseif ($TestSaftyDistanceToLP -eq "Y") {
+    $header = "TotLoop","LoopNormInter","OldcollateralETH","OraclePrice","SaftyDistanceToLP","StartSaftySoftLiquidUSD", "StartSoftLiquidUSD","EndLiquidPriceUSD","LoanCollRatio"#,"LiquidPreisMaxMint"
+}
 else {
 $header = 
 "TotLoop",
@@ -220,6 +227,8 @@ $header =
 "NetRevenueUSD",
 # "TotKeet10pctUSD",
 "Leverage",
+"SaftyDistanceToLP",
+"StartSaftySoftLiquidUSD",
 "StartSoftLiquidUSD",
 "EndLiquidPriceUSD",
 "LiquidPreisMaxMint",
@@ -371,6 +380,7 @@ $tableCalc += [PSCustomObject]@{Calculation = "# PriceVariant           = $ParPr
 $tableCalc += [PSCustomObject]@{Calculation = "# OraclePrices           = $OraclePriceTable"}
 $tableCalc += [PSCustomObject]@{Calculation = "# VaultSafetyUSD         = $ParVaultSafetyUSD %"}
 $tableCalc += [PSCustomObject]@{Calculation = "# SaftyPriceDistancePct  = $ParSaftyPriceDistancePct %"}
+$tableCalc += [PSCustomObject]@{Calculation = "# SaftyRatioDistanceToLP = $ParSaftyRatioDistanceToLP %"}
 $tableCalc += [PSCustomObject]@{Calculation = "# leverageEfficiency     = $ParleverageEfficiency %"}    
 $tableCalc += [PSCustomObject]@{Calculation = ""}
 
@@ -386,6 +396,8 @@ $tableCalc += [PSCustomObject]@{Calculation = ""}
 $tableCalc += [PSCustomObject]@{Calculation = "# TestVaultSafetyUSD       : Test activ = $TestVaultSafetyUSD"}
 $tableCalc += [PSCustomObject]@{Calculation = "# TestLeverageEfficiency   : Test activ = $TestLeverageEfficiency"}
 $tableCalc += [PSCustomObject]@{Calculation = "# TestSoftLiquidPriceRange : Test activ = $TestSoftLiquidPriceRange"}
+$tableCalc += [PSCustomObject]@{Calculation = "# TestSaftyDistanceToLP    : Test activ = $TestSaftyDistanceToLP"} 
+$tableCalc += [PSCustomObject]@{Calculation = ""}
 
 
 $tableRows = @()
@@ -405,7 +417,7 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
     $OldcollateralETH   = $TotCollateralETH
     $OldCollateralUSD   = $OldcollateralETH     * $OraclePriceTable[$i1] 
     $TotCollateralUSD   = $TotCollateralETH     * $OraclePriceTable[$i1]        
-    $NewCreditUSD       = (($OldcollateralETH  * $OraclePriceTable[$i1])* $MaxUsdMinting) - $TotCreditUSD   # AHA
+    $NewCreditUSD       = (($OldcollateralETH   * $OraclePriceTable[$i1])* $MaxUsdMinting) - $TotCreditUSD   # AHA
     $TotCreditUSD      += $NewCreditUSD
     $NewKeet10pctUSD    = $NewCreditUSD         * ($ParVaultSafetyUSD      /100) # 10% Sicherheit
     $TotKeet10pctUSD   += $NewKeet10pctUSD  
@@ -422,17 +434,33 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
 
     $EndLiquidPriceUSD  = $LiquidPreisMax       * $Differenz
     $StartSoftLiquidUSD = $EndLiquidPriceUSD    / $LiquidationRatio
-           
-
-    # $leverageEfficiency = (($TotCollateralETH - $OldcollateralETH) / $OldcollateralETH)*100 
-    $leverageEfficiency = ( 100 / $OldcollateralETH * $TotCollateralETH) -100
-    if ($leverageEfficiency -le $ParleverageEfficiency) {
-        break  # This will exit the loop when the condition is met
-    }
+    
     $leverageEfficiencyPct = $leverageEfficiency/100
     $MaxCollUSDwSaftyPriceDist = ($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting
     $MaxCollUSD                = ($TotCollateralETH * ($OraclePriceTable[$i1] )                               ) * $MaxUsdMinting
-        
+
+    
+    # Check ValidationRules / Exit Criterias
+    if ($TotCreditUSD -ge (($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting)) {
+        $tableCalc += [PSCustomObject]@{Calculation = "# Exit because of : TotCreditUSD -ge ((TotCollateralETH * (OraclePriceTable[i1] * ParSaftyPriceDistanceDecimal)) * MaxUsdMinting))"}
+        $tableCalc += [PSCustomObject]@{Calculation = "#                 : $TotCreditUSD -ge (($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting))"}
+        break  # This will exit the loop when the condition is met
+    }
+    if ($leverageEfficiency -lt $ParleverageEfficiency ) {
+        $tableCalc += [PSCustomObject]@{Calculation = "# Exit because of : leverageEfficiency  -lt ParleverageEfficiency"}
+        $tableCalc += [PSCustomObject]@{Calculation = "#                 : $leverageEfficiency -lt $ParleverageEfficiency"}
+        break  # This will exit the loop when the condition is met
+    }  
+
+    $SaftyDistanceToLP = $OraclePriceTable[$i1] * $ParSaftyRatioDistanceToLP /100
+    if ($StartSoftLiquidUSD -gt $OraclePriceTable[$i1]-$SaftyDistanceToLP) {
+        $tableCalc += [PSCustomObject]@{Calculation = "# Exit because of : StartSoftLiquidUSD -gt OraclePriceTable[i1]-SaftyDistanceToLP"}
+        $tableCalc += [PSCustomObject]@{Calculation = "#                 : $StartSoftLiquidUSD -gt $OraclePriceTable[$i1]-$SaftyDistanceToLP"}
+        break  # This will exit the loop when the condition is met
+    }
+
+
+    $StartSaftySoftLiquidUSD  = $OraclePriceTable[$i1] - $SaftyDistanceToLP         
     $tableRows += [PSCustomObject]@{
         TotLoop             = $i9++
         LoopNormInter       =  (($i1 *100+100))
@@ -452,7 +480,9 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
         LoanCollRatio       = "{0,13:P0}" -f $LoanCollRatio
         LiquidPreisMaxMint  = "{0,18:N0}" -f $LiquidPreisMax 
         EndLiquidPriceUSD   = "{0,17:N0}" -f $EndLiquidPriceUSD  
-        StartSoftLiquidUSD  = "{0,18:N0}" -f $StartSoftLiquidUSD 
+        StartSoftLiquidUSD  = "{0,18:N0}" -f $StartSoftLiquidUSD
+        StartSaftySoftLiquidUSD  = "{0,18:N0}" -f $StartSaftySoftLiquidUSD        
+        SaftyDistanceToLP   = "{0,17:N0}" -f $SaftyDistanceToLP 
         leverageEfficiency  = "{0,18:P1}" -f $leverageEfficiencyPct 
         MaxCollUSDwSaftyPrice = "{0,21:N0}" -f $MaxCollUSDwSaftyPriceDist
         MaxCollUSD          = "{0,10:N0}" -f $MaxCollUSD 
@@ -464,64 +494,85 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
 
     # Loop 2 "Interloop" :  Loop until CollateralUSD is greater than TotCreditUSD
     # $ii1=0
-    while (( $TotCreditUSD -lt (($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting)) -and $leverageEfficiency -ge $ParleverageEfficiency) 
+    # while (( $TotCreditUSD -lt (($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting)) -and $leverageEfficiency -ge $ParleverageEfficiency) 
+    while ($true)
     {
-        
-            $ii1++ 
-            $OldcollateralETH   = $TotCollateralETH
-            $OldCollateralUSD   = $OldcollateralETH *   $OraclePriceTable[$i1]       
-            $TotCollateralUSD   = $TotCollateralETH *   $OraclePriceTable[$i1] 
-            #$NewCreditUSD       = ($TotCollateralUSD -   $TotCreditUSD) #* $MaxUsdMinting
-            $NewCreditUSD       = ($TotCollateralUSD * $MaxUsdMinting) -   $TotCreditUSD    # AHA                        
-            $NewKeet10pctUSD    = $NewCreditUSD     *   ($ParVaultSafetyUSD/100)     # 10% Sicherheit
-            $TotKeet10pctUSD    = $TotKeet10pctUSD  +   $NewKeet10pctUSD  
-            $NewCollateralETH   = ($NewCreditUSD    -   $NewKeet10pctUSD) / $OraclePriceTable[$i1]
-            $TotCreditUSD       = $TotCreditUSD     +   $NewCreditUSD
-            $TotCollateralETH   = $OldcollateralETH +   $NewCollateralETH
-            $TotCollateralUSD   = $TotCollateralETH *   $OraclePriceTable[$i1]        
-            $Leverage           = $TotCollateralETH /   $StartCollateralETH 
-            $CollLoanRatio      = $TotCollateralUSD /   $TotCreditUSD
-            $LoanCollRatio      = $TotCreditUSD     /   $TotCollateralUSD
-            $NetRevenueUSD      = $TotCollateralUSD -   $TotCreditUSD + $TotKeet10pctUSD
-            $LiquidPreisMax     = $OraclePriceTable[$i1] * $LiquidationRatio
-            $Differenz          = $LoanCollRatio        / $MaxUsdMinting        
-            $EndLiquidPriceUSD  = $LiquidPreisMax       * $Differenz  
-            $StartSoftLiquidUSD = $EndLiquidPriceUSD    / $LiquidationRatio
+        $ii1++         
+        $OldcollateralETH   = $TotCollateralETH
+        $OldCollateralUSD   = $OldcollateralETH *   $OraclePriceTable[$i1]       
+        $TotCollateralUSD   = $TotCollateralETH *   $OraclePriceTable[$i1] 
+        #$NewCreditUSD       = ($TotCollateralUSD -   $TotCreditUSD) #* $MaxUsdMinting
+        $NewCreditUSD       = ($TotCollateralUSD * $MaxUsdMinting) -   $TotCreditUSD    # AHA                        
+        $NewKeet10pctUSD    = $NewCreditUSD     *   ($ParVaultSafetyUSD/100)     # 10% Sicherheit
+        $TotKeet10pctUSD    = $TotKeet10pctUSD  +   $NewKeet10pctUSD  
+        $NewCollateralETH   = ($NewCreditUSD    -   $NewKeet10pctUSD) / $OraclePriceTable[$i1]
+        $TotCreditUSD       = $TotCreditUSD     +   $NewCreditUSD
+        $TotCollateralETH   = $OldcollateralETH +   $NewCollateralETH
+        $TotCollateralUSD   = $TotCollateralETH *   $OraclePriceTable[$i1]        
+        $Leverage           = $TotCollateralETH /   $StartCollateralETH 
+        $CollLoanRatio      = $TotCollateralUSD /   $TotCreditUSD
+        $LoanCollRatio      = $TotCreditUSD     /   $TotCollateralUSD
+        $NetRevenueUSD      = $TotCollateralUSD -   $TotCreditUSD + $TotKeet10pctUSD
+        $LiquidPreisMax     = $OraclePriceTable[$i1] * $LiquidationRatio
+        $Differenz          = $LoanCollRatio        / $MaxUsdMinting        
+        $EndLiquidPriceUSD  = $LiquidPreisMax       * $Differenz  
+        $StartSoftLiquidUSD = $EndLiquidPriceUSD    / $LiquidationRatio
+
+        $leverageEfficiencyPct = $leverageEfficiency/100 
+        $MaxCollUSDwSaftyPriceDist = ($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting
+        $MaxCollUSD                = ($TotCollateralETH * ($OraclePriceTable[$i1] )                               ) * $MaxUsdMinting
+    
+
+        # Check ValidationRules / Exit Criterias
+        if ($TotCreditUSD -ge (($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting)) {
+            $tableCalc += [PSCustomObject]@{Calculation = "# Exit because of : TotCreditUSD -ge ((TotCollateralETH * (OraclePriceTable[i1] * ParSaftyPriceDistanceDecimal)) * MaxUsdMinting))"}
+            $tableCalc += [PSCustomObject]@{Calculation = "#                 : $TotCreditUSD -ge (($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting))"}
+            break  # This will exit the loop when the condition is met
+        }
+        if ($leverageEfficiency -lt $ParleverageEfficiency ) {
+            $tableCalc += [PSCustomObject]@{Calculation = "# Exit because of : leverageEfficiency  -lt ParleverageEfficiency"}
+            $tableCalc += [PSCustomObject]@{Calculation = "#                 : $leverageEfficiency -lt $ParleverageEfficiency"}
+            break  # This will exit the loop when the condition is met
+        }  
+
+        $SaftyDistanceToLP = $OraclePriceTable[$i1] * $ParSaftyRatioDistanceToLP /100
+        if ($StartSoftLiquidUSD -gt $OraclePriceTable[$i1]-$SaftyDistanceToLP) {
+            $tableCalc += [PSCustomObject]@{Calculation = "# Exit because of : StartSoftLiquidUSD -gt OraclePriceTable[i1]-SaftyDistanceToLP"}
+            $tableCalc += [PSCustomObject]@{Calculation = "#                 : $StartSoftLiquidUSD -gt $OraclePriceTable[$i1]-$SaftyDistanceToLP"}
+            break  # This will exit the loop when the condition is met
+        }
 
 
-            # $leverageEfficiency = (($TotCollateralETH - $OldcollateralETH) / $OldcollateralETH)*100
-            $leverageEfficiency = ( 100 / $OldcollateralETH * $TotCollateralETH) -100
-            $leverageEfficiencyPct = $leverageEfficiency/100 
-            $MaxCollUSDwSaftyPriceDist = ($TotCollateralETH * ($OraclePriceTable[$i1] * $ParSaftyPriceDistanceDecimal)) * $MaxUsdMinting
-            $MaxCollUSD                = ($TotCollateralETH * ($OraclePriceTable[$i1] )                               ) * $MaxUsdMinting
-            
-            # Add the current values as a row in the table
-            $tableRows += [PSCustomObject]@{
-                TotLoop             = $i9++
-                LoopNormInter       = "{0,05:N0}" -f ($ii1)
-                TotCollateralETH    = "{0,16:N2}" -f $TotCollateralETH
-                OldcollateralETH    = "{0,16:N2}" -f $OldcollateralETH
-                OldCollateralUSD    = "{0,16:N0}" -f $OldCollateralUSD
-                TotCollateralUSD    = "{0,16:N0}" -f $TotCollateralUSD
-                NewCreditUSD        = "{0,12:N0}" -f $NewCreditUSD
-                NewCollateralETH    = "{0,16:N2}" -f $NewCollateralETH
-                TotCreditUSD        = "{0,12:N0}" -f $TotCreditUSD
-                NetRevenueUSD       = "{0,11:N0}" -f $NetRevenueUSD
-                NewKeet10pctUSD     = "{0,15:N0}" -f $NewKeet10pctUSD
-                TotKeet10pctUSD     = "{0,15:N0}" -f $TotKeet10pctUSD
-                OraclePrice         = "{0,11:N0}" -f $OraclePriceTable[$i1]
-                Leverage            = "{0,08:N1}" -f $Leverage
-                CollLoanRatio       = "{0,12:P0}" -f $CollLoanRatio 
-                LoanCollRatio       = "{0,13:P0}" -f $LoanCollRatio
-                LiquidPreisMaxMint  = "{0,18:N0}" -f $LiquidPreisMax 
-                EndLiquidPriceUSD   = "{0,17:N0}" -f $EndLiquidPriceUSD  
-                StartSoftLiquidUSD  = "{0,18:N0}" -f $StartSoftLiquidUSD 
-                leverageEfficiency  = "{0,18:P1}" -f $leverageEfficiencyPct 
-                MaxCollUSDwSaftyPrice = "{0,21:N0}" -f $MaxCollUSDwSaftyPriceDist
-                MaxCollUSD          = "{0,10:N0}" -f $MaxCollUSD
-                ParKey              =                $ParKey
-            }
-            $NewCollateralETH=0
+$StartSaftySoftLiquidUSD  = $OraclePriceTable[$i1] - $SaftyDistanceToLP  
+        # Add the current values as a row in the table
+        $tableRows += [PSCustomObject]@{
+            TotLoop             = $i9++
+            LoopNormInter       = "{0,05:N0}" -f ($ii1)
+            TotCollateralETH    = "{0,16:N2}" -f $TotCollateralETH
+            OldcollateralETH    = "{0,16:N2}" -f $OldcollateralETH
+            OldCollateralUSD    = "{0,16:N0}" -f $OldCollateralUSD
+            TotCollateralUSD    = "{0,16:N0}" -f $TotCollateralUSD
+            NewCreditUSD        = "{0,12:N0}" -f $NewCreditUSD
+            NewCollateralETH    = "{0,16:N2}" -f $NewCollateralETH
+            TotCreditUSD        = "{0,12:N0}" -f $TotCreditUSD
+            NetRevenueUSD       = "{0,11:N0}" -f $NetRevenueUSD
+            NewKeet10pctUSD     = "{0,15:N0}" -f $NewKeet10pctUSD
+            TotKeet10pctUSD     = "{0,15:N0}" -f $TotKeet10pctUSD
+            OraclePrice         = "{0,11:N0}" -f $OraclePriceTable[$i1]
+            Leverage            = "{0,08:N1}" -f $Leverage
+            CollLoanRatio       = "{0,12:P0}" -f $CollLoanRatio 
+            LoanCollRatio       = "{0,13:P0}" -f $LoanCollRatio
+            LiquidPreisMaxMint  = "{0,18:N0}" -f $LiquidPreisMax 
+            EndLiquidPriceUSD   = "{0,17:N0}" -f $EndLiquidPriceUSD  
+            StartSoftLiquidUSD  = "{0,18:N0}" -f $StartSoftLiquidUSD 
+            SaftyDistanceToLP   = "{0,17:N0}" -f $SaftyDistanceToLP 
+            StartSaftySoftLiquidUSD  = "{0,18:N0}" -f $StartSaftySoftLiquidUSD        
+            leverageEfficiency  = "{0,18:P1}" -f $leverageEfficiencyPct 
+            MaxCollUSDwSaftyPrice = "{0,21:N0}" -f $MaxCollUSDwSaftyPriceDist
+            MaxCollUSD          = "{0,10:N0}" -f $MaxCollUSD
+            ParKey              =                $ParKey
+        }
+        $NewCollateralETH=0
     }
 }
 
