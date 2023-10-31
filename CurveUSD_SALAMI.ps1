@@ -114,7 +114,7 @@ $Suffix                         = "Batch_Preis_Ansteig"     # Last part of the c
 
 $TestVaultSafetyUSD             = 'N'
 $TestSaftyPriceDistance         = 'N'
-$TestLeverageEfficiency         = 'Y'
+$TestLeverageEfficiency         = 'N'
 $TestSoftLiquidPriceRange       = 'N'
 
 # $ParKey      = $ParKey_Ext
@@ -128,7 +128,7 @@ $ParBänder                      = FuncMode -Variable 'ParBänder'              
 $ParVaultSafetyUSD              = FuncMode -Variable 'ParVaultSafetyUSD'         -ValueNumb 10.0    
 
 #                                 % gap to oracle price eg. 25% = 0.75 + OraclePrice    
-$ParSaftyPriceDistancePct       = FuncMode -Variable 'ParSaftyPriceDistancePct'  -ValueNumb 25.0    
+$ParSaftyPriceDistancePct       = FuncMode -Variable 'ParSaftyPriceDistancePct'  -ValueNumb 30.0    
 $ParSaftyPriceDistanceDecimal   = (100 - $ParSaftyPriceDistancePct    ) / 100
 
 #                                 % change of previous (Old)CollateralETH based on leverage (TotCollateral)                                    
@@ -148,8 +148,8 @@ $ParOraclePriceIncreasePct      = FuncMode -Variable 'ParOraclePriceIncreasePct'
 $ParOraclePriceLimit            = FuncMode -Variable 'ParOraclePriceLimit'       -ValueNumb 10000     
 
 #"inc"                            OraclePrice will increase by absolut number eg: every 500 usd of price increase
-$ParOraclePriceIncreaseAbs      = FuncMode -Variable 'ParOraclePriceIncreaseAbs' -ValueNumb 1000 
-$ParOraclePriceLimit            = FuncMode -Variable 'ParOraclePriceLimit'       -ValueNumb 10000     
+$ParOraclePriceIncreaseAbs      = FuncMode -Variable 'ParOraclePriceIncreaseAbs' -ValueNumb 500 
+$ParOraclePriceLimit            = FuncMode -Variable 'ParOraclePriceLimit'       -ValueNumb 15000     
 
 
 
@@ -211,21 +211,23 @@ $header =
 "OldcollateralETH",
 "OraclePrice",
 "OldCollateralUSD",
-# "NewCreditUSD",
+"NewCreditUSD",
 # "NewKeet10pctUSD", 
 # "NewCollateralETH",
 "TotCollateralETH",
 "TotCollateralUSD", 
 # "TotCreditUSD",
-# "NetRevenueUSD",
+"NetRevenueUSD",
 # "TotKeet10pctUSD",
-# "Leverage",
+"Leverage",
 "StartSoftLiquidUSD",
 "EndLiquidPriceUSD",
 "LiquidPreisMaxMint",
-# "CollLoanRatio",
-# "leverageEfficiency"
+"CollLoanRatio",
+"leverageEfficiency"
 "LoanCollRatio",
+# "MaxCollUSDwSaftyPrice",
+# "MaxCollUSD",
 "ParKey"
 }
 
@@ -451,7 +453,7 @@ for ($i1 = 0; $i1 -lt $i2; $i1++) {
         LiquidPreisMaxMint  = "{0,18:N0}" -f $LiquidPreisMax 
         EndLiquidPriceUSD   = "{0,17:N0}" -f $EndLiquidPriceUSD  
         StartSoftLiquidUSD  = "{0,18:N0}" -f $StartSoftLiquidUSD 
-        leverageEfficiency  = "{0,18:P3}" -f $leverageEfficiencyPct 
+        leverageEfficiency  = "{0,18:P1}" -f $leverageEfficiencyPct 
         MaxCollUSDwSaftyPrice = "{0,21:N0}" -f $MaxCollUSDwSaftyPriceDist
         MaxCollUSD          = "{0,10:N0}" -f $MaxCollUSD 
         ParKey              =                $ParKey
